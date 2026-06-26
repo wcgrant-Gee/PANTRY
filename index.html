@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="My Food Pantry - Eating Guide: Personalized food guidance based on your medical conditions">
+    <meta name="theme-color" content="#7D3C2C">
+    <title>My Food Pantry - Eating Guide</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    
+    <style>
+        :root {
+            --primary: #7D3C2C;
+            --accent: #E8D5C4;
+            --dark-primary: #5C2E2E;
+            --light-bg: #FFFFFF;
+            --dark-bg: #1A1A1A;
+            --light-text: #000000;
+            --dark-text: #FFFFFF;
+            --border: #DDDDDD;
+            --dark-border: #333333;
+            --success: #4CAF50;
+            --warning: #FF9800;
+            --danger: #F44336;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--light-bg);
+            color: var(--light-text);
+            overflow-x: hidden;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body { background: var(--dark-bg); color: var(--dark-text); }
+        }
+
+        #app { width: 100%; height: 100vh; display: flex; flex-direction: column; position: relative; }
+
+        #header {
+            background: var(--primary);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 600;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        #header-title { font-size: 16px; font-weight: 700; }
+        #header-subtitle { font-size: 12px; opacity: 0.9; margin-top: 2px; }
+
+        .header-button {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #content { flex: 1; overflow-y: auto; overflow-x: hidden; }
+
+        #onboarding { display: none; width: 100%; height: 100%; position: relative; }
+        #onboarding.active { display: flex; }
+
+        .carousel-slide {
+            display: none;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            overflow-y: auto;
+            opacity: 0;
+            flex-direction: column;
+            justify-content: center;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        .carousel-slide.active { display: flex; opacity: 1; position: relative; }
+
+        .slide-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            gap: 16px;
+        }
+
+        .slide-title { font-size: 28px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+        .slide-description { font-size: 16px; line-height: 1.5; }
+
+        .slide-explanation {
+            background: var(--accent);
+            color: var(--dark-primary);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+
+        .slide-input {
+            width: 100%;
+            max-width: 300px;
+            padding: 12px;
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            font-size: 16px;
+            margin: 8px 0;
+        }
+
+        .condition-checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 16px auto;
+            width: 100%;
+            max-width: 300px;
+            padding: 12px;
+            background: var(--accent);
+            border-radius: 8px;
+        }
+
+        .condition-checkbox { width: 24px; height: 24px; cursor: pointer; accent-color: var(--primary); }
+        .condition-label { font-size: 16px; cursor: pointer; flex: 1; text-align: left; color: var(--dark-primary); }
+
+        .slide-buttons {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .button-primary { background: var(--primary); color: white; }
+        .button-secondary { background: var(--accent); color: var(--dark-primary); border: 2px solid var(--primary); }
+
+        .carousel-progress {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .progress-dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; }
+        .progress-dot.active { background: var(--primary); }
+
+        #home { display: none; width: 100%; padding: 16px; }
+        #home.active { display: block; }
+
+        .search-bar {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 16px;
+            background: var(--light-bg);
+            color: var(--light-text);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .search-bar { background: var(--dark-bg); color: var(--dark-text); border-color: var(--dark-border); }
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 16px 0 8px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .section-count { font-size: 14px; color: #666; font-weight: 400; }
+
+        .category-header { font-size: 14px; font-weight: 700; color: var(--dark-primary); margin-top: 12px; margin-bottom: 8px; }
+
+        .food-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+
+        .food-card {
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--light-bg);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .food-card { background: var(--dark-bg); border-color: var(--dark-border); }
+        }
+
+        .food-card:active { background: var(--accent); border-color: var(--primary); }
+
+        .food-name { font-size: 16px; font-weight: 500; }
+        .food-badge { font-size: 18px; font-weight: 700; }
+        .food-badge.ok { color: var(--success); }
+        .food-badge.notok { color: var(--danger); }
+
+        #bottomSheet {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--light-bg);
+            border-top-left-radius: 16px;
+            border-top-right-radius: 16px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+            z-index: 200;
+            max-height: 90%;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            #bottomSheet { background: var(--dark-bg); }
+        }
+
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        .sheet-handle { width: 40px; height: 4px; background: #ccc; border-radius: 2px; margin: 8px auto 12px; }
+        .sheet-content { padding: 12px 16px 20px; overflow-y: auto; max-height: calc(90% - 40px); }
+
+        .detail-title { font-size: 24px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+        .detail-category { font-size: 12px; color: #666; margin-bottom: 12px; }
+        .detail-status { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 600; padding: 12px; border-radius: 8px; margin-bottom: 16px; background: var(--accent); color: var(--dark-primary); }
+
+        .condition-breakdown { margin-top: 16px; }
+        .condition-row {
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--border);
+            font-size: 14px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .condition-row { background: var(--dark-border); }
+        }
+
+        .condition-row.user { background: var(--accent); border-left: 4px solid var(--primary); }
+        .condition-row.safe { background: rgba(76,175,80,0.1); }
+        .condition-row.unsafe { background: rgba(244,67,54,0.1); }
+
+        .expert-comment { background: var(--accent); padding: 12px; border-radius: 8px; margin-top: 16px; font-size: 14px; line-height: 1.5; color: var(--dark-primary); }
+
+        .sheet-close {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 300;
+        }
+
+        .modal-overlay.active { display: block; }
+
+        .modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--light-bg);
+            border-radius: 12px;
+            padding: 20px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 310;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .modal { background: var(--dark-bg); }
+        }
+
+        .modal-header { font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 16px; display: flex; justify-content: space-between; }
+        .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; }
+
+        .modal-tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 2px solid var(--border); }
+        .modal-tab { padding: 8px 12px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 600; color: #666; border-bottom: 3px solid transparent; }
+        .modal-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+        .modal-tab-content { display: none; }
+        .modal-tab-content.active { display: block; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+        .form-input { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background: var(--light-bg); color: var(--light-text); }
+
+        @media (prefers-color-scheme: dark) {
+            .form-input { background: var(--dark-bg); color: var(--dark-text); border-color: var(--dark-border); }
+        }
+
+        .char-count { font-size: 12px; color: #666; margin-top: 4px; }
+
+        .condition-toggle-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .condition-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .condition-toggle { background: var(--dark-border); }
+        }
+
+        .condition-toggle input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--primary); }
+        .condition-toggle label { cursor: pointer; font-size: 14px; flex: 1; }
+
+        .legal-content { font-size: 13px; line-height: 1.6; }
+        .legal-content h3 { font-size: 16px; font-weight: 700; margin: 12px 0 8px 0; color: var(--primary); }
+        .legal-content ul { margin-left: 16px; margin-bottom: 8px; }
+
+        .modal-buttons { display: flex; gap: 8px; margin-top: 16px; }
+        .modal-button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .modal-button-primary { background: var(--primary); color: white; }
+        .modal-button-secondary { background: var(--border); }
+
+        @media (prefers-color-scheme: dark) {
+            .modal-button-secondary { background: var(--dark-border); }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="header">
+            <div><div id="header-title">🍽️ My Food Pantry</div><div id="header-subtitle" style="display:none;"></div></div>
+            <div><button class="header-button" id="settingsBtn" title="Settings">⚙️</button></div>
+        </div>
+
+        <div id="content">
+            <div id="onboarding" class="active"><div class="carousel-slides"></div></div>
+            <div id="home"><input type="text" id="searchInput" class="search-bar" placeholder="Search foods..."><div id="foodList"></div></div>
+        </div>
+    </div>
+
+    <div id="bottomSheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-content">
+            <div class="detail-title" id="detailTitle"></div>
+            <div class="detail-category" id="detailCategory"></div>
+            <div class="detail-status" id="detailStatus"></div>
+            <div class="condition-breakdown" id="conditionBreakdown"></div>
+            <div class="expert-comment" id="expertComment"></div>
+            <button class="sheet-close" onclick="closeDetail()">Close</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="settingsOverlay">
+        <div class="modal">
+            <div class="modal-header">Settings<button class="modal-close" onclick="closeSettings()">✕</button></div>
+            <div class="modal-tabs">
+                <button class="modal-tab active" onclick="switchTab('profile')">Profile</button>
+                <button class="modal-tab" onclick="switchTab('conditions')">Conditions</button>
+                <button class="modal-tab" onclick="switchTab('legal')">Legal</button>
+            </div>
+            <div id="profile-tab" class="modal-tab-content active">
+                <div class="form-group">
+                    <label class="form-label">Profile Name (optional)</label>
+                    <input type="text" id="profileName" class="form-input" placeholder="Enter your name" maxlength="30">
+                    <div class="char-count"><span id="charCount">0</span>/30</div>
+                </div>
+            </div>
+            <div id="conditions-tab" class="modal-tab-content">
+                <div class="form-group">
+                    <label class="form-label">Select your conditions:</label>
+                    <div class="condition-toggle-group" id="conditionToggles"></div>
+                </div>
+            </div>
+            <div id="legal-tab" class="modal-tab-content">
+                <div class="legal-content">
+                    <h3>Privacy Policy</h3>
+                    <p>This app does not collect, store, or transmit any personal data to external servers. All your food preferences and health conditions are stored locally on your device only.</p>
+                    <h3>Terms of Service</h3>
+                    <p><strong>Medical Disclaimer:</strong> This app is for informational purposes only and is NOT a substitute for professional medical advice. Always consult with a healthcare provider before making significant dietary changes.</p>
+                    <h3>Legal Notice</h3>
+                    <p>Food information is based on general nutritional guidelines. Individual tolerances vary. Not for emergencies or allergies.</p>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-button modal-button-primary" onclick="saveSettings()">Save Changes</button>
+                <button class="modal-button modal-button-secondary" onclick="closeSettings()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let appState = { profile: { name: '', conditions: [] }, foodData: null, currentFoodId: null, searchQuery: '' };
+
+        async function initApp() {
+            if ('serviceWorker' in navigator) {
+                try { await navigator.serviceWorker.register('sw.js'); } catch (err) { console.log('SW failed'); }
+            }
+
+            const stored = localStorage.getItem('foodPantryProfile');
+            if (stored) appState.profile = JSON.parse(stored);
+
+            try {
+                const response = await fetch('food-data.json');
+                appState.foodData = await response.json();
+            } catch (err) {
+                console.log('Food data load failed');
+                return;
+            }
+
+            if (appState.profile.conditions.length === 0) {
+                initOnboarding();
+            } else {
+                showHome();
+            }
+
+            document.getElementById('searchInput').addEventListener('input', (e) => {
+                appState.searchQuery = e.target.value.toLowerCase();
+                renderFoodList();
+            });
+
+            document.getElementById('settingsBtn').addEventListener('click', openSettings);
+            document.getElementById('profileName').addEventListener('input', (e) => {
+                document.getElementById('charCount').textContent = e.target.value.length;
+            });
+            document.getElementById('settingsOverlay').addEventListener('click', (e) => {
+                if (e.target === e.currentTarget) closeSettings();
+            });
+        }
+
+        function initOnboarding() {
+            const slidesContainer = document.querySelector('.carousel-slides');
+            slidesContainer.innerHTML = '';
+
+            const slides = [
+                { title: '🍽️ Welcome', description: 'Personalized food guidance', content: '<div class="slide-explanation">Health-based recommendations, no tracking, works offline!</div>', action: 'next' },
+                { title: 'Your Name?', description: '(optional)', content: '<input type="text" id="onboardingName" class="slide-input" placeholder="Enter name" maxlength="30">', action: 'next' }
+            ];
+
+            appState.foodData.conditions.forEach((cond, idx) => {
+                slides.push({
+                    title: cond.name,
+                    description: cond.description,
+                    content: `<div class="slide-explanation">${cond.description}</div><label class="condition-checkbox-group"><input type="checkbox" class="condition-checkbox" data-condition-id="${cond.id}"><span class="condition-label">I have ${cond.name}</span></label>`,
+                    action: 'next'
+                });
+            });
+
+            slides.push({ title: 'All Set!', description: 'Review below', content: '<div id="summaryList" style="text-align:left;max-width:300px;margin:16px auto;"></div>', action: 'start' });
+
+            slides.forEach((slide, idx) => {
+                const slideEl = document.createElement('div');
+                slideEl.className = 'carousel-slide' + (idx === 0 ? ' active' : '');
+                slideEl.innerHTML = `<div class="slide-content"><h2 class="slide-title">${slide.title}</h2><p class="slide-description">${slide.description}</p>${slide.content}</div><div style="width:100%;"><div class="carousel-progress"></div><div class="slide-buttons">${idx > 0 ? '<button class="button button-secondary" onclick="prevSlide()">← Back</button>' : ''}<button class="button button-primary" onclick="nextSlide()">${slide.action === 'start' ? 'Start Using App' : 'Next →'}</button></div></div>`;
+                slidesContainer.appendChild(slideEl);
+            });
+
+            slides.forEach((_, idx) => {
+                const progress = slideEl.previousElementSibling.querySelector('.carousel-progress');
+                for (let i = 0; i < slides.length; i++) {
+                    const dot = document.createElement('div');
+                    dot.className = 'progress-dot' + (i <= idx ? ' active' : '');
+                    progress.appendChild(dot);
+                }
+            });
+
+            document.getElementById('onboarding').classList.add('active');
+            document.getElementById('home').classList.remove('active');
+        }
+
+        function nextSlide() {
+            const slides = document.querySelectorAll('.carousel-slide');
+            const currentIdx = Array.from(slides).findIndex(s => s.classList.contains('active'));
+
+            if (currentIdx === 1) {
+                appState.profile.name = document.getElementById('onboardingName').value;
+            } else if (currentIdx > 1 && currentIdx < slides.length - 1) {
+                const checkbox = slides[currentIdx].querySelector('.condition-checkbox');
+                if (checkbox) {
+                    const condId = parseInt(checkbox.dataset.conditionId);
+                    if (checkbox.checked && !appState.profile.conditions.includes(condId)) {
+                        appState.profile.conditions.push(condId);
+                    }
+                }
+            }
+
+            if (currentIdx === slides.length - 2) {
+                const summaryList = document.getElementById('summaryList');
+                summaryList.innerHTML = `<p><strong>${appState.profile.name || 'User'}</strong></p><p style="margin-top:12px;font-size:14px;">Selected conditions:</p><ul style="margin-left:16px;margin-top:8px;">${appState.profile.conditions.map(condId => {
+                    const cond = appState.foodData.conditions.find(c => c.id === condId);
+                    return `<li>${cond.name}</li>`;
+                }).join('')}</ul>`;
+            }
+
+            if (currentIdx < slides.length - 1) {
+                slides[currentIdx].classList.remove('active');
+                slides[currentIdx + 1].classList.add('active');
+            } else {
+                localStorage.setItem('foodPantryProfile', JSON.stringify(appState.profile));
+                showHome();
+            }
+        }
+
+        function prevSlide() {
+            const slides = document.querySelectorAll('.carousel-slide');
+            const currentIdx = Array.from(slides).findIndex(s => s.classList.contains('active'));
+            if (currentIdx > 0) {
+                slides[currentIdx].classList.remove('active');
+                slides[currentIdx - 1].classList.add('active');
+            }
+        }
+
+        function showHome() {
+            document.getElementById('onboarding').classList.remove('active');
+            document.getElementById('home').classList.add('active');
+
+            const subtitle = document.getElementById('header-subtitle');
+            const conditions = appState.profile.conditions.length;
+            subtitle.textContent = `${conditions} condition${conditions !== 1 ? 's' : ''} selected`;
+            subtitle.parentElement.style.display = 'block';
+
+            renderFoodList();
+        }
+
+        function renderFoodList() {
+            const container = document.getElementById('foodList');
+            container.innerHTML = '';
+
+            if (!appState.foodData) return;
+
+            const okFoods = [];
+            const notOkFoods = [];
+
+            appState.foodData.foods.forEach(food => {
+                const matches = appState.searchQuery === '' || food.name.toLowerCase().includes(appState.searchQuery);
+                if (!matches) return;
+
+                let isSafe = true;
+                for (const condId of appState.profile.conditions) {
+                    if (food.ratings[String(condId)] === 'No') {
+                        isSafe = false;
+                        break;
+                    }
+                }
+
+                if (isSafe) okFoods.push(food);
+                else notOkFoods.push(food);
+            });
+
+            container.innerHTML += `<div class="section-title">✓ OK to Eat<span class="section-count">${okFoods.length}</span></div>`;
+
+            const groupByCategory = (foods) => {
+                const grouped = {};
+                foods.forEach(food => {
+                    if (!grouped[food.category]) grouped[food.category] = [];
+                    grouped[food.category].push(food);
+                });
+                return grouped;
+            };
+
+            Object.entries(groupByCategory(okFoods)).forEach(([category, foods]) => {
+                container.innerHTML += `<div class="category-header">${category}</div>`;
+                const listEl = document.createElement('div');
+                listEl.className = 'food-list';
+                foods.forEach(food => {
+                    const card = document.createElement('div');
+                    card.className = 'food-card';
+                    card.onclick = () => showDetail(food.id);
+                    card.innerHTML = `<div class="food-name">${food.name}</div><div class="food-badge ok">✓</div>`;
+                    listEl.appendChild(card);
+                });
+                container.appendChild(listEl);
+            });
+
+            container.innerHTML += `<div class="section-title" style="margin-top:24px;">✗ Do Not Eat<span class="section-count">${notOkFoods.length}</span></div>`;
+
+            Object.entries(groupByCategory(notOkFoods)).forEach(([category, foods]) => {
+                container.innerHTML += `<div class="category-header">${category}</div>`;
+                const listEl = document.createElement('div');
+                listEl.className = 'food-list';
+                foods.forEach(food => {
+                    const card = document.createElement('div');
+                    card.className = 'food-card';
+                    card.onclick = () => showDetail(food.id);
+                    card.innerHTML = `<div class="food-name">${food.name}</div><div class="food-badge notok">✗</div>`;
+                    listEl.appendChild(card);
+                });
+                container.appendChild(listEl);
+            });
+        }
+
+        function showDetail(foodId) {
+            const food = appState.foodData.foods.find(f => f.id === foodId);
+            if (!food) return;
+
+            document.getElementById('detailTitle').textContent = food.name;
+            document.getElementById('detailCategory').textContent = food.category;
+
+            let isSafe = true;
+            for (const condId of appState.profile.conditions) {
+                if (food.ratings[String(condId)] === 'No') {
+                    isSafe = false;
+                    break;
+                }
+            }
+
+            const statusEl = document.getElementById('detailStatus');
+            if (isSafe) {
+                statusEl.className = 'detail-status';
+                statusEl.innerHTML = '<span>✓</span> OK to Eat';
+                statusEl.style.background = 'rgba(76,175,80,0.2)';
+                statusEl.style.color = '#4CAF50';
+            } else {
+                statusEl.className = 'detail-status';
+                statusEl.innerHTML = '<span>✗</span> Do Not Eat';
+                statusEl.style.background = 'rgba(244,67,54,0.2)';
+                statusEl.style.color = '#F44336';
+            }
+
+            const breakdownEl = document.getElementById('conditionBreakdown');
+            breakdownEl.innerHTML = '';
+
+            appState.foodData.conditions.forEach(cond => {
+                const rating = food.ratings[String(cond.id)];
+                const isUserCondition = appState.profile.conditions.includes(cond.id);
+
+                let statusText = '';
+                if (rating === 'Yes') statusText = '✓ Safe';
+                else if (rating === 'No') statusText = '✗ Avoid';
+                else statusText = '⚠ Caution';
+
+                const rowEl = document.createElement('div');
+                rowEl.className = `condition-row${isUserCondition ? ' user' : ''}${rating === 'Yes' ? ' safe' : ' unsafe'}`;
+                rowEl.innerHTML = `<span>${cond.name}${isUserCondition ? ' ★' : ''}</span><span style="font-weight:600;">${statusText}</span>`;
+                breakdownEl.appendChild(rowEl);
+            });
+
+            document.getElementById('expertComment').textContent = food.comment;
+            document.getElementById('bottomSheet').style.display = 'block';
+        }
+
+        function closeDetail() { document.getElementById('bottomSheet').style.display = 'none'; }
+
+        function openSettings() {
+            document.getElementById('profileName').value = appState.profile.name;
+            document.getElementById('charCount').textContent = appState.profile.name.length;
+
+            const togglesEl = document.getElementById('conditionToggles');
+            togglesEl.innerHTML = '';
+            appState.foodData.conditions.forEach(cond => {
+                const isSelected = appState.profile.conditions.includes(cond.id);
+                const label = document.createElement('label');
+                label.className = 'condition-toggle';
+                label.innerHTML = `<input type="checkbox" ${isSelected ? 'checked' : ''} data-condition-id="${cond.id}"><span>${cond.name}</span>`;
+                togglesEl.appendChild(label);
+            });
+
+            document.getElementById('settingsOverlay').classList.add('active');
+        }
+
+        function closeSettings() { document.getElementById('settingsOverlay').classList.remove('active'); }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.modal-tab').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.modal-tab-content').forEach(content => content.classList.remove('active'));
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        function saveSettings() {
+            appState.profile.name = document.getElementById('profileName').value;
+            appState.profile.conditions = [];
+            document.querySelectorAll('[data-condition-id]').forEach(checkbox => {
+                if (checkbox.checked) appState.profile.conditions.push(parseInt(checkbox.dataset.conditionId));
+            });
+
+            if (appState.profile.conditions.length === 0) {
+                alert('Please select at least one condition');
+                return;
+            }
+
+            localStorage.setItem('foodPantryProfile', JSON.stringify(appState.profile));
+            closeSettings();
+            renderFoodList();
+
+            const conditions = appState.profile.conditions.length;
+            document.getElementById('header-subtitle').textContent = `${conditions} condition${conditions !== 1 ? 's' : ''} selected`;
+        }
+
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
